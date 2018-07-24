@@ -59,9 +59,9 @@ object Polygons_work {
     println(pointWktDF.count())
 
     //create PointDF
-    val pointDF = sparkSession.sql("select ST_Point(cast(latitude as Decimal(24,20))," +
-      " cast(longitude as Decimal(24,20)), cast(id as String),cast(addresstext as String)," +
-      " cast(createddatetime as String)) as area from pointtable") //,id,createddatetime,addresstext  from pointtable")
+    val pointDF = sparkSession.sql("select ST_Point(cast(longitude as Decimal(24,20))," +
+      " cast(latitude as Decimal(24,20)), cast(id as String),cast(createddatetime as String),cast(addresstext as String)," +
+      " cast(applicantlocation as String)) as area from pointtable") //,id,createddatetime,addresstext  from pointtable")
     println(pointDF.count())
     pointDF.printSchema()
 
@@ -90,7 +90,7 @@ object Polygons_work {
     polygonRDD.spatialPartitioning(pointRDD.getPartitioner)
 
     //Join
-    val joinResultPairRDD = JoinQuery.SpatialJoinQueryFlat(pointRDD,polygonRDD,true,true)
+    val joinResultPairRDD = JoinQuery.SpatialJoinQueryFlat(pointRDD,polygonRDD,false,false)
     val joinResultDf= Adapter.toDf(joinResultPairRDD,sparkSession)//.schema("polygon", "point","id","addresstext","createddatetime")
     println(joinResultDf.count())
     joinResultDf.coalesce(1).write.csv("joinresult.csv")
