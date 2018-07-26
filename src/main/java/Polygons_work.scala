@@ -71,14 +71,21 @@ object Polygons_work {
     pointRDD.analyze()
 
 
-    val polygonWktDF = DataLoader.polygonsDF.select("minX", "maxX", "minY", "maxY")
+    val polygonWktDF = DataLoader.polygonsDF
+  .select("minX", "maxX", "minY", "maxY").rdd
+  .map(r => (r.getString(0), r.getString(1), r.getString(2), r.getString(3),
+    r.getString(1).toDouble - r.getString(0).toDouble / 2 + r.getString(0).toDouble,
+    r.getString(3).toDouble - r.getString(2).toDouble / 2 + r.getString(2).toDouble))
+  .toDF("minX", "maxX", "minY", "maxY", "centreX", "centreY")
+    val polygonID = polygonWktDF.withColumn("ID", monotonically_increasing_id())
+    polygonID.createOrReplaceTempView("polygontable")
     val polygonID=polygonWktDF.withColumn("ID",monotonically_increasing_id())
     polygonID.createOrReplaceTempView("polygontable")
 
     //create PolygonDF
-    val polygonDF= sparkSession.sql("select ST_PolygonFromEnvelope(cast(minX as Decimal(24,20)), " +
-      "cast(minY as Decimal(24,20)), cast(maxX as Decimal(24,20)), cast(maxY as Decimal(24,20)),cast(ID as String) ) " +
-      "from polygontable")
+    val polygonDF = sparkSession.sql("select ST_PolygonFromEnvelope(cast(minX as Decimal(24,20))" +
+      ", cast(minY as Decimal(24,20)), cast(maxX as Decimal(24,20)), cast(maxY as Decimal(24,20))," +
+      " cast(ID as String), cast(centreX as String), cast(centreY as String) ) from polygontable")
 
     //create PolygonRDD
     val polygonRDD = new SpatialRDD[Geometry]
@@ -97,7 +104,30 @@ object Polygons_work {
     joinResultDf.schema
     joinResultDf.printSchema()
 
-
+    //compute the weighted matrix, adjacency matrix
+//    val frame = Adapter.toDf(result1, sparkSession).select("_c1", "_c5","_c2","_c3","_c6","_c7")
+//      .filter("_c1 != _c5")
+//    var arr = Array.ofDim[Double](frame.count().toInt, frame.count().toInt)
+//    frame.show(20, false)
+//    println(frame.count())
+//    frame.collect().foreach(row => {
+//      val p1 = row.getString(0).toInt
+//      val p2 = row.getString(1).toInt
+//      val c1x = row.getString(2).toDouble
+//      val c1y = row.getString(3).toDouble
+//      val c2x = row.getString(4).toDouble
+//      val c2y = row.getString(5).toDouble
+//      arr(p1)(p2) = math.sqrt(math.pow(c2x - c1x, 2) + math.pow(c2y - c1y, 2))
+//    })
+//    var total:Int = 0
+//    for {i <- 0 until arr.size
+//         j <- 0 until arr.size
+//    } if (arr(i)(j) > 0) {
+//      total = total + 1
+//      println(arr(i)(j))
+//    }
+//
+//    println("total "+total)
 
   }
 
