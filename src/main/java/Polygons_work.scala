@@ -194,6 +194,8 @@ val polygonWktDF = DataLoader.polygonsDF
         .join(a1.toDF("polygonID_neigh","events_count"),$"id_other" === $"polygonID_neigh")
         .drop("id","id_other")
       .filter("distance <= 5.00")
+    /*      .filter("distance >= 5.00 AND distance <=10.00")
+      .filter("distance >= 10.00 AND distace <=20.00")*/
 
 
     //count number of polygons
